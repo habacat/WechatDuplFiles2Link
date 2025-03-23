@@ -9,19 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.os }}-${{ matrix.arch }}
+  build-windows:
+    name: Build Windows amd64
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows, linux, darwin]
-        arch: [amd64, arm64]
-        exclude:
-          # Exclude combinations that are not commonly used
-          - os: windows
-            arch: arm64
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,34 +19,31 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.20'
           cache: true
 
-      - name: Build binary
+      - name: Build Windows binary
         env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
+          GOOS: windows
+          GOARCH: amd64
         run: |
-          APP_NAME=duplfiles2link
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            APP_NAME="${APP_NAME}.exe"
-          fi
+          APP_NAME="duplfiles2link.exe"
           go build -v -ldflags="-s -w -X duplfiles2link/pkg/duplfiles2link.Version=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')" -o "${APP_NAME}" .
           
           # Create zip file
-          ZIP_NAME="duplfiles2link-${{ matrix.os }}-${{ matrix.arch }}.zip"
+          ZIP_NAME="duplfiles2link-windows-amd64.zip"
           zip -r "${ZIP_NAME}" "${APP_NAME}" LICENSE README.md
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: duplfiles2link-${{ matrix.os }}-${{ matrix.arch }}
-          path: duplfiles2link-${{ matrix.os }}-${{ matrix.arch }}.zip
+          name: duplfiles2link-windows-amd64
+          path: duplfiles2link-windows-amd64.zip
           retention-days: 1
 
   release:
     name: Create Release
-    needs: build
+    needs: build-windows
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -74,7 +61,9 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "### duplfiles2link $VERSION" > release_notes.md
           echo "" >> release_notes.md
-          echo "Automatically built binaries for multiple platforms." >> release_notes.md
+          echo "Windows binary is available for download." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Note: This application is designed for Windows systems only." >> release_notes.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
