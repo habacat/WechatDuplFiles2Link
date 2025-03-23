@@ -28,7 +28,7 @@ jobs:
           GOARCH: amd64
         run: |
           APP_NAME="duplfiles2link.exe"
-          go build -v -ldflags="-s -w -X duplfiles2link/pkg/duplfiles2link.Version=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')" -gcflags="-m -m" -trimpath -o "${APP_NAME}" .
+          go build -v -ldflags="-s -w -X duplfiles2link/pkg/duplfiles2link.Version=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')" -trimpath -o "${APP_NAME}" .
           
           # Install 7-Zip
           sudo apt-get update && sudo apt-get install -y p7zip-full
