@@ -28,17 +28,20 @@ jobs:
           GOARCH: amd64
         run: |
           APP_NAME="duplfiles2link.exe"
-          go build -v -ldflags="-s -w -X duplfiles2link/pkg/duplfiles2link.Version=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')" -o "${APP_NAME}" .
+          go build -v -ldflags="-s -w -X duplfiles2link/pkg/duplfiles2link.Version=$(echo ${GITHUB_REF#refs/tags/} | sed 's/^v//')" -gcflags="-m -m" -trimpath -o "${APP_NAME}" .
           
-          # Create zip file
-          ZIP_NAME="duplfiles2link-windows-amd64.zip"
-          zip -r "${ZIP_NAME}" "${APP_NAME}" LICENSE README.md
+          # Install 7-Zip
+          sudo apt-get update && sudo apt-get install -y p7zip-full
+          
+          # Create 7z archive with maximum compression
+          Z7_NAME="duplfiles2link-windows-amd64.7z"
+          7z a -t7z -mx=9 "${Z7_NAME}" "${APP_NAME}" LICENSE README.md
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: duplfiles2link-windows-amd64
-          path: duplfiles2link-windows-amd64.zip
+          path: duplfiles2link-windows-amd64.7z
           retention-days: 1
 
   release:
@@ -70,6 +73,6 @@ jobs:
         with:
           name: Release ${{ env.VERSION }}
           body_path: release_notes.md
-          files: artifacts/**/*.zip
+          files: artifacts/**/*.7z
           draft: false
           prerelease: false 
